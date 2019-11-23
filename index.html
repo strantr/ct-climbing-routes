@@ -25,7 +25,7 @@ canvas, img {
 	new Vue({
 		template: `
   <div>
-    <select style="position: fixed" v-model="route">
+    <select style="position: fixed; z-index: 1" v-model="route">
       <option v-for="route in routes" :key="route.name" :value="route">{{route.name}}</option>
     </select>
     <img ref="img" src="https://i.imgur.com/njwxnuX.jpg">
