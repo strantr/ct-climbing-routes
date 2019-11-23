@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Climbing Routes</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.10/vue.min.js" integrity="sha256-chlNFSVx3TdcQ2Xlw7SvnbLAavAQLO0Y/LBiWX04viY=" crossorigin="anonymous"></script>
+</head>
+
+<body>
+	<div id="app"></div>
+</body>
+
+<style>
+body {
+	margin: 0;
+}
+canvas, img {
+	position: absolute;
+	width: 100%;
+	height: auto;
+}
+</style>
+
+<script>
+	new Vue({
+		template: `
+  <div>
+    <select style="position: fixed" v-model="route">
+      <option v-for="route in routes" :key="route.name" :value="route">{{route.name}}</option>
+    </select>
+    <img ref="img" src="https://i.imgur.com/njwxnuX.jpg">
+    <canvas ref="canvas"/>
+  </div>
+`,
+  data() {
+    return {
+      route: undefined,
+      coords: {
+        1: { x: 1284, y: 904 },
+        2: { x: 1567, y: 895 },
+        3: { x: 1443, y: 816 },
+        4: { x: 1409, y: 759 },
+        5: { x: 1139, y: 775 },
+        6: { x: 1188, y: 721 },
+        7: { x: 1284, y: 720 },
+        8: { x: 1576, y: 717 },
+        9: { x: 1203, y: 661 },
+        10: { x: 1351, y: 657 },
+        11: { x: 1392, y: 659 },
+        12: { x: 1440, y: 655 },
+        13: { x: 1429, y: 615 },
+        14: { x: 1391, y: 612 },
+        15: { x: 1415, y: 572 },
+        16: { x: 1299, y: 569 },
+        17: { x: 1309, y: 529 },
+        18: { x: 999, y: 567 },
+        19: { x: 1143, y: 547 },
+        20: { x: 1387, y: 487 },
+        21: { x: 1416, y: 441 },
+        22: { x: 1383, y: 433 },
+        23: { x: 1196, y: 461 },
+        24: { x: 1251, y: 417 },
+        25: { x: 1196, y: 396 },
+        26: { x: 1183, y: 367 },
+        27: { x: 1152, y: 292 },
+        28: { x: 1219, y: 229 },
+        29: { x: 1622, y: 612 },
+        30: { x: 1648, y: 558 },
+        31: { x: 1626, y: 554 },
+        32: { x: 1664, y: 512 },
+        33: { x: 1603, y: 491 },
+        34: { x: 1582, y: 466 },
+        35: { x: 1624, y: 396 },
+        36: { x: 1660, y: 370 },
+        37: { x: 1636, y: 331 },
+        38: { x: 1568, y: 337 },
+        39: { x: 1837, y: 700 },
+        40: { x: 1906, y: 722 },
+        41: { x: 1820, y: 603 },
+        42: { x: 1757, y: 564 },
+        43: { x: 1850, y: 507 },
+        44: { x: 1780, y: 464 },
+        45: { x: 1911, y: 422 },
+        46: { x: 1923, y: 350 },
+        47: { x: 1857, y: 311 },
+        48: { x: 2038, y: 722 },
+        49: { x: 2183, y: 720 },
+        50: { x: 2038, y: 498 },
+        51: { x: 2171, y: 488 },
+        52: { x: 2200, y: 260 },
+        53: { x: 2390, y: 412 },
+        54: { x: 2448, y: 411 },
+        55: { x: 2344, y: 250 },
+        56: { x: 2524, y: 382 },
+        57: { x: 2529, y: 235 },
+        58: { x: 2678, y: 716 },
+        59: { x: 2599, y: 506 },
+        60: { x: 2543, y: 459 },
+        61: { x: 2631, y: 452 },
+        62: { x: 2704, y: 285 },
+        63: { x: 2770, y: 346 },
+        64: { x: 2851, y: 282 },
+        65: { x: 2541, y: 46 }
+      },
+      routes: [
+        { name: "sillyboy", grade: "v4", points: [7, 20, 21, 38] },
+        {
+          name: "simontest",
+          grade: "v4",
+          points: [1, 5, 6, 9, 19, 23, 24, 25, 26, 27, 28]
+        },
+        {
+          name: "vitalite",
+          grade: "9000",
+          points: [2, 12, 22, 21]
+        }
+      ]
+    };
+  },
+  watch: {
+    route() {
+      this.draw();
+    }
+  },
+  methods: {
+    draw() {
+      const canvas = this.$refs.canvas;
+      var img = this.$refs.img;
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext("2d");
+      ctx.textBaseline = "middle";
+      ctx.textAlign = "center";
+
+      const routes = this.routes;
+      const coords = this.coords;
+
+      ctx.font = "30px  serif";
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "red";
+      ctx.fillStyle = "white";
+
+      const route = this.route;
+      if (route) {
+        ctx.beginPath();
+        const firstPoint = route.points[0];
+        ctx.moveTo(coords[firstPoint].x, coords[firstPoint].y);
+        for (const point of route.points.slice(1)) {
+          ctx.lineTo(coords[point].x, coords[point].y);
+          ctx.stroke();
+        }
+        var x = coords[route.points[route.points.length - 1]].x;
+        ctx.lineTo(x, 150);
+        ctx.stroke();
+        ctx.fillText(route.name, x, 120);
+      }
+
+      for (const id in coords) {
+        const pt = coords[id];
+
+        ctx.fillStyle = "rgba(255,255,255,0.5)";
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, 18, 0, 2 * Math.PI);
+        ctx.fill();
+
+        ctx.fillStyle = "black";
+        ctx.fillText(id, pt.x, pt.y);
+      }
+    }
+  },
+  mounted() {
+    var img = this.$refs.img;
+    img.onload = () => {
+      this.draw();
+    };
+  }
+	}).$mount("#app");
+</script>
+
+</html>
