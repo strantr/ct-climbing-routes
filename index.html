@@ -32,9 +32,10 @@ canvas, img {
     <canvas ref="canvas"/>
   </div>
 `,
-  data() {
+  data() {  
+    var qs = window.location.search.substr(1).split("&").map(s => s.split("=")).reduce((p, n) => (p[n[0]]=n[1],p), {});
     return {
-      route: undefined,
+      route: qs["route"],
       coords: {
         1: { x: 1284, y: 904 },
         2: { x: 1567, y: 895 },
