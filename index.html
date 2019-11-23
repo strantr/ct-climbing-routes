@@ -34,8 +34,22 @@ canvas, img {
 `,
   data() {  
     var qs = window.location.search.substr(1).split("&").map(s => s.split("=")).reduce((p, n) => (p[n[0]]=n[1],p), {});
+    var routes = [
+        { name: "sillyboy", grade: "v4", points: [7, 20, 21, 38] },
+        {
+          name: "simontest",
+          grade: "v4",
+          points: [1, 5, 6, 9, 19, 23, 24, 25, 26, 27, 28]
+        },
+        {
+          name: "vitalite",
+          grade: "9000",
+          points: [2, 12, 22, 21]
+        }
+      ];
+	  var route = routes.find(r => r.name === qs["route"]);
     return {
-      route: qs["route"],
+      route,
       coords: {
         1: { x: 1284, y: 904 },
         2: { x: 1567, y: 895 },
@@ -103,19 +117,7 @@ canvas, img {
         64: { x: 2851, y: 282 },
         65: { x: 2541, y: 46 }
       },
-      routes: [
-        { name: "sillyboy", grade: "v4", points: [7, 20, 21, 38] },
-        {
-          name: "simontest",
-          grade: "v4",
-          points: [1, 5, 6, 9, 19, 23, 24, 25, 26, 27, 28]
-        },
-        {
-          name: "vitalite",
-          grade: "9000",
-          points: [2, 12, 22, 21]
-        }
-      ]
+      routes
     };
   },
   watch: {
