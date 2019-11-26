@@ -1,183 +1,199 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<title>Climbing Routes</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.10/vue.min.js" integrity="sha256-chlNFSVx3TdcQ2Xlw7SvnbLAavAQLO0Y/LBiWX04viY=" crossorigin="anonymous"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script src="https://unpkg.com/pinch-zoom-canvas@1.0.4/pinch-zoom-canvas.js"></script>
+    <script src="https://unpkg.com/vue@2.6.10/dist/vue.min.js"></script>
+
+    <script src="coords.js"></script>
+    <script src="routes.js"></script>
 </head>
 
-<body>
-	<div id="app"></div>
-</body>
-
 <style>
-body {
-	margin: 0;
-}
-canvas, img {
-	position: absolute;
-	width: 100%;
-	height: auto;
-}
+    body {
+        margin: 0;
+        overflow: hidden;
+        font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    }
+
+    #app {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    canvas {
+        flex: 1;
+    }
+
+    header,
+    footer {
+        padding: 10px;
+    }
+
+    header {
+        display: flex;
+    }
+
+    header>div {
+        width: 50%;
+        padding: 0 10px;
+    }
+
+    select {
+        width: 100%;
+    }
 </style>
 
+<body>
+    <div id="app">
+        <header>
+            <div>
+                <label>By Name</label>
+                <br>
+                <select v-model="route">
+                    <option v-for="route in routesByName" :key="route.name" :value="route">
+                        {{route.name}} ({{route.grade}})
+                    </option>
+                </select>
+            </div>
+            <div>
+                <label>By Grade</label><br>
+                <select v-model="route">
+                    <option v-for="route in routesByGrade" :key="route.name" :value="route">
+                        {{route.name}} ({{route.grade}})
+                    </option>
+                </select>
+            </div>
+        </header>
+        <canvas id="canvas"></canvas>
+        <footer v-if="route">
+            {{route.name}}: {{route.points.join(" -> ")}}
+        </footer>
+    </div>
+</body>
+
 <script>
-	new Vue({
-		template: `
-  <div>
-    <select style="position: fixed; z-index: 1" v-model="route">
-      <option v-for="route in routes" :key="route.name" :value="route">{{route.name}}</option>
-    </select>
-    <img ref="img" src="https://i.imgur.com/njwxnuX.jpg">
-    <canvas ref="canvas"/>
-  </div>
-`,
-  data() {  
-    var qs = window.location.search.substr(1).split("&").map(s => s.split("=")).reduce((p, n) => (p[n[0]]=n[1],p), {});
-    var routes = [
-        { name: "sillyboy", grade: "v4", points: [7, 20, 21, 38] },
-        {
-          name: "simontest",
-          grade: "v4",
-          points: [1, 5, 6, 9, 19, 23, 24, 25, 26, 27, 28]
+    new Vue({
+        el: "#app",
+        data() {
+            var qs = window.location.search.substr(1).split("&").map(s => s.split("=")).reduce((p, n) => (p[n[0]] = n[1], p), {});
+            return {
+                routesByName: [...routes.sort((a, b) => a.name.localeCompare(b.name))],
+                routesByGrade: [...routes.sort((a, b) => a.grade.substr(1) - b.grade.substr(1))],
+                route: routes.find(r => r.name === qs["route"])
+            }
         },
-        {
-          name: "vitalite",
-          grade: "9000",
-          points: [2, 12, 22, 21]
+        computed: {
+            points() {
+                if (this.route) {
+                    return this.route.points.map((p, i) => {
+                        var coord;
+                        console.log(p);
+                        if (p === 0) {
+                            coord = { ...coords[this.route.points[i + 1]] };
+                            coord.y = 1100;
+                        } else {
+                            coord = coords[p];
+                        }
+                        var point = { x: coord.x, y: coord.y }
+                        if (i > 0 && this.route.points[i - 1] === p) {
+                            point.x += 10;
+                        }
+                        point.label = p;
+                        if (i <= 1) {
+                            point.color = "#1EFF1eee"
+                        } else {
+                            point.color = "#1E90FFee"
+                        }
+                        return point;
+                    })
+                }
+
+            }
+        },
+        mounted() {
+            const vue = this;
+            // Override the render function to draw our custom points
+            const render = PinchZoomCanvas.prototype.render;
+            PinchZoomCanvas.prototype.render = function () {
+                const canvas = this;
+                render.apply(this, arguments);
+                const size = Math.min(Math.max(this.scale.x / 5 * 50, 10), 50);
+
+                this.context.fillStyle = "white";
+                this.context.font = (size * 2) + "px  Arial Narrow";
+                this.context.textAlign = "center";
+
+                function getCoord(point) {
+                    return {
+                        x: point.x * canvas.scale.x + canvas.position.x,
+                        y: point.y * canvas.scale.y + canvas.position.y
+                    }
+                }
+
+                this.context.lineWidth = 3 * this.scale.x;
+                this.context.strokeStyle = "red";
+
+                this.context.beginPath();
+                let coord = getCoord(vue.points[0]);
+                this.context.moveTo(coord.x, coord.y);
+
+                for (const point of vue.points.slice(1)) {
+                    const coord = getCoord(point);
+                    this.context.lineTo(coord.x, coord.y);
+                    this.context.stroke();
+                }
+
+                const end = { ...vue.points[vue.points.length - 1] };
+                end.y = 150;
+                coord = getCoord(end);
+                this.context.lineTo(coord.x, coord.y);
+                this.context.stroke();
+
+                if (vue.route.name) {
+                    this.context.fillText(vue.route.name, coord.x, coord.y);
+                }
+
+                for (const point of vue.points) {
+                    this.context.fillStyle = point.color;
+                    const coord = getCoord(point);
+
+                    this.context.beginPath();
+                    this.context.arc(coord.x, coord.y, size, 0, 2 * Math.PI);
+                    this.context.fill();
+
+                    this.context.fillStyle = "white";
+                    this.context.fillText(point.label, coord.x + 17 * this.scale.x / 2, coord.y - 14 * this.scale.x / 2);
+                }
+
+
+            }
+            const canvas = document.getElementById('canvas');
+            const pinchZoom = new PinchZoomCanvas({
+                canvas,
+                path: "wall.jpg",
+                doubletap: false
+            });
         }
-      ];
-	  var route = routes.find(r => r.name === qs["route"]);
-    return {
-      route,
-      coords: {
-        1: { x: 1284, y: 904 },
-        2: { x: 1567, y: 895 },
-        3: { x: 1443, y: 816 },
-        4: { x: 1409, y: 759 },
-        5: { x: 1139, y: 775 },
-        6: { x: 1188, y: 721 },
-        7: { x: 1284, y: 720 },
-        8: { x: 1576, y: 717 },
-        9: { x: 1203, y: 661 },
-        10: { x: 1351, y: 657 },
-        11: { x: 1392, y: 659 },
-        12: { x: 1440, y: 655 },
-        13: { x: 1429, y: 615 },
-        14: { x: 1391, y: 612 },
-        15: { x: 1415, y: 572 },
-        16: { x: 1299, y: 569 },
-        17: { x: 1309, y: 529 },
-        18: { x: 999, y: 567 },
-        19: { x: 1143, y: 547 },
-        20: { x: 1387, y: 487 },
-        21: { x: 1416, y: 441 },
-        22: { x: 1383, y: 433 },
-        23: { x: 1196, y: 461 },
-        24: { x: 1251, y: 417 },
-        25: { x: 1196, y: 396 },
-        26: { x: 1183, y: 367 },
-        27: { x: 1152, y: 292 },
-        28: { x: 1219, y: 229 },
-        29: { x: 1622, y: 612 },
-        30: { x: 1648, y: 558 },
-        31: { x: 1626, y: 554 },
-        32: { x: 1664, y: 512 },
-        33: { x: 1603, y: 491 },
-        34: { x: 1582, y: 466 },
-        35: { x: 1624, y: 396 },
-        36: { x: 1660, y: 370 },
-        37: { x: 1636, y: 331 },
-        38: { x: 1568, y: 337 },
-        39: { x: 1837, y: 700 },
-        40: { x: 1906, y: 722 },
-        41: { x: 1820, y: 603 },
-        42: { x: 1757, y: 564 },
-        43: { x: 1850, y: 507 },
-        44: { x: 1780, y: 464 },
-        45: { x: 1911, y: 422 },
-        46: { x: 1923, y: 350 },
-        47: { x: 1857, y: 311 },
-        48: { x: 2038, y: 722 },
-        49: { x: 2183, y: 720 },
-        50: { x: 2038, y: 498 },
-        51: { x: 2171, y: 488 },
-        52: { x: 2200, y: 260 },
-        53: { x: 2390, y: 412 },
-        54: { x: 2448, y: 411 },
-        55: { x: 2344, y: 250 },
-        56: { x: 2524, y: 382 },
-        57: { x: 2529, y: 235 },
-        58: { x: 2678, y: 716 },
-        59: { x: 2599, y: 506 },
-        60: { x: 2543, y: 459 },
-        61: { x: 2631, y: 452 },
-        62: { x: 2704, y: 285 },
-        63: { x: 2770, y: 346 },
-        64: { x: 2851, y: 282 },
-        65: { x: 2541, y: 46 }
-      },
-      routes
-    };
-  },
-  watch: {
-    route() {
-      this.draw();
-    }
-  },
-  methods: {
-    draw() {
-      const canvas = this.$refs.canvas;
-      var img = this.$refs.img;
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      const ctx = canvas.getContext("2d");
-      ctx.textBaseline = "middle";
-      ctx.textAlign = "center";
+    });
 
-      const routes = this.routes;
-      const coords = this.coords;
 
-      ctx.font = "30px  serif";
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = "red";
-      ctx.fillStyle = "white";
 
-      const route = this.route;
-      if (route) {
-        ctx.beginPath();
-        const firstPoint = route.points[0];
-        ctx.moveTo(coords[firstPoint].x, coords[firstPoint].y);
-        for (const point of route.points.slice(1)) {
-          ctx.lineTo(coords[point].x, coords[point].y);
-          ctx.stroke();
-        }
-        var x = coords[route.points[route.points.length - 1]].x;
-        ctx.lineTo(x, 150);
-        ctx.stroke();
-        ctx.fillText(route.name, x, 120);
-      }
 
-      for (const id in coords) {
-        const pt = coords[id];
 
-        ctx.fillStyle = "rgba(255,255,255,0.5)";
-        ctx.beginPath();
-        ctx.arc(pt.x, pt.y, 18, 0, 2 * Math.PI);
-        ctx.fill();
 
-        ctx.fillStyle = "black";
-        ctx.fillText(id, pt.x, pt.y);
-      }
-    }
-  },
-  mounted() {
-    var img = this.$refs.img;
-    img.onload = () => {
-      this.draw();
-    };
-  }
-	}).$mount("#app");
+    // var image = new Image();
+    // image.addEventListener("load", () => {
+    //     pinchZoom.pause();
+    //     pinchZoom.imgTexture = image;
+    //     pinchZoom.resume();
+    // })
+    // image.src = "wall.jpg";
 </script>
 
 </html>
